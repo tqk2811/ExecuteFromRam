@@ -22,6 +22,7 @@ namespace TestExe
   {
     public MainWindow()
     {
+      Console.WriteLine(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription);
       InitializeComponent();
     }
   }

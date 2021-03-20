@@ -1,121 +1,121 @@
-#include <cstdlib>
-#include <iostream>
-#include <sstream>
-#include <cassert>
-#include <fstream>
-#include <Windows.h>
-#include <metahost.h>
-#include <vector>
-#include <assert.h>
+#include "pch.h"
 
-#define CheckHr(hr)assert(hr >= 0);
-
-#pragma comment(lib, "mscoree.lib")
-#import "mscorlib.tlb" raw_interfaces_only\
-            high_property_prefixes("_get","_put","_putref")\
-            rename("ReportEvent", "InteropServices_ReportEvent")
-
-using namespace mscorlib;
-LPCWSTR DotNetVersion = L"v4.0.30319";
-//LPCWSTR DotNetVersion = L"v4.8.04084";
-
-
+//C:\Windows\Microsoft.NET\Framework
+//C:\Windows\Microsoft.NET\Framework64
+const LPCWSTR RuntimeVersion = L"v4.0.30319";
+const LPCWSTR domainAssemblyName = L"MyAppDomainManager";
+const LPCWSTR domainTypename = L"MyAppDomainManager.CustomAppDomainManager";
 
 //https://www.codeproject.com/Articles/1236146/Protecting-NET-plus-Application-By-Cplusplus-Unman
+//https://www.codeproject.com/Articles/416471/CLR-Hosting-Customizing-the-CLR
 
-//Install CLRHost, MetaHost and Instances
-ICLRMetaHost* pMetaHost = NULL;  /// Metahost installed.
-ICLRMetaHostPolicy* pMetaHostPolicy = NULL;  /// Metahost Policy installed.
-ICLRDebugging* pCLRDebugging = NULL;  /// Metahost Debugging installed.
-//Install .NET Runtime
+ICLRMetaHost* pMetaHost = NULL;
 ICLRRuntimeInfo* pRuntimeInfo = NULL;
-//Start and Load CLRApp
-ICorRuntimeHost* pRuntimeHost = NULL;
+ICLRRuntimeHost* pRuntimeHost = NULL;
+ICLRControl* pCLRControl = NULL;
+MinimalHostControl* pMyHostControl = NULL;
 
-void Init()
+SAFEARRAY* GenBinary(const BYTE* pImage, ULONG assembyLength)
 {
-    //Install WPF Mode
-    CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);
-
-    //Install CLRHost, MetaHostand Instances
-    HRESULT hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost,(LPVOID*)&pMetaHost);
-    CheckHr(hr);
-    hr = CLRCreateInstance(CLSID_CLRMetaHostPolicy, IID_ICLRMetaHostPolicy,(LPVOID*)&pMetaHostPolicy);
-    CheckHr(hr);
-    hr = CLRCreateInstance(CLSID_CLRDebugging, IID_ICLRDebugging,(LPVOID*)&pCLRDebugging);
-    CheckHr(hr);
-
-    //Install .NET Runtime
-    hr = pMetaHost->GetRuntime(DotNetVersion, IID_ICLRRuntimeInfo, (VOID**)&pRuntimeInfo);
-    CheckHr(hr);
-
-    //Start and Load CLRApp
-    BOOL bLoadable;
-    hr = pRuntimeInfo->IsLoadable(&bLoadable);
-    CheckHr(hr);
-    hr = pRuntimeInfo->GetInterface(CLSID_CorRuntimeHost, IID_ICorRuntimeHost, (VOID**)&pRuntimeHost);
-    CheckHr(hr);
-    hr = pRuntimeHost->Start();
-    CheckHr(hr);
-}
-
-void RunFromMemory(const BYTE* pImage,ULONG64 assembyLength)
-{ 
-    //Install AppDomain
-    IUnknownPtr pAppDomainThunk = NULL;
-    HRESULT hr = pRuntimeHost->GetDefaultDomain(&pAppDomainThunk);
-    CheckHr(hr);
-    _AppDomainPtr pDefaultAppDomain = NULL;
-    hr = pAppDomainThunk->QueryInterface(__uuidof(_AppDomain), (VOID**)&pDefaultAppDomain);
-    CheckHr(hr);
-    _AssemblyPtr pAssembly = NULL;
     SAFEARRAYBOUND rgsabound[1];
     rgsabound[0].cElements = assembyLength;
     rgsabound[0].lLbound = 0;
     SAFEARRAY* pSafeArray = SafeArrayCreate(VT_UI1, 1, rgsabound);
-    void* pvData = NULL;
-    hr = SafeArrayAccessData(pSafeArray, &pvData);
-    CheckHr(hr);
+    if (pSafeArray == nullptr) return nullptr;
 
-    //Add , execution , clean up , and memory reader
+    void* pvData = NULL;
+    HRESULT hr = SafeArrayAccessData(pSafeArray, &pvData);
+    CheckHr(hr);
     memcpy(pvData, pImage, assembyLength);
     hr = SafeArrayUnaccessData(pSafeArray);
     CheckHr(hr);
-    hr = pDefaultAppDomain->Load_3(pSafeArray, &pAssembly);
+    return pSafeArray;
+}
+
+SAFEARRAY* GenArg(const LPWSTR* args, const int argc)
+{
+    SAFEARRAYBOUND rgsabound[1];
+    rgsabound[0].cElements = argc;
+    rgsabound[0].lLbound = 0;
+    SAFEARRAY* pSafeArray = SafeArrayCreate(VT_BSTR, 1, rgsabound);
+    if (pSafeArray == nullptr) return nullptr;
+
+    for (int i = 0; i < argc; i++)
+    {
+        BSTR pData = SysAllocString(args[i]);
+        long rgIndicies[1];
+        rgIndicies[0] = rgsabound[0].lLbound + i;
+        HRESULT hr = SafeArrayPutElement(pSafeArray, rgIndicies, pData);
+    }
+    return pSafeArray;
+}
+
+
+
+void RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
+{
+    HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);//Install WPF Mode
     CheckHr(hr);
-    _MethodInfoPtr pMethodInfo = NULL;
-    hr = pAssembly->get_EntryPoint(&pMethodInfo);
+    hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost, (LPVOID*)&pMetaHost);//Install MetaHost
     CheckHr(hr);
-    VARIANT retVal;
-    ZeroMemory(&retVal, sizeof(VARIANT));
-    VARIANT obj;
-    ZeroMemory(&obj, sizeof(VARIANT));
-    obj.vt = VT_NULL;
-    SAFEARRAY* psaStaticMethodArgs = SafeArrayCreateVector(VT_VARIANT, 0, 0);
-    hr = pMethodInfo->Invoke_3(obj, psaStaticMethodArgs, &retVal);
+    hr = pMetaHost->GetRuntime(RuntimeVersion, IID_PPV_ARGS(&pRuntimeInfo));//Install .NET Runtime
+    CheckHr(hr);
+    hr = pRuntimeInfo->GetInterface(CLSID_CLRRuntimeHost, IID_PPV_ARGS(&pRuntimeHost));
+    CheckHr(hr);
+    
+    //Install AppDomain
+    hr = pRuntimeHost->GetCLRControl(&pCLRControl);
+    CheckHr(hr);
+
+    pMyHostControl = new MinimalHostControl();
+    hr = pRuntimeHost->SetHostControl(pMyHostControl);
+    CheckHr(hr);
+
+    hr = pCLRControl->SetAppDomainManagerType(domainAssemblyName, domainTypename);
+    CheckHr(hr);
+
+    hr = pRuntimeHost->Start();//Start CLR host
+    CheckHr(hr);
+
+
+    ICustomAppDomainManager* pAppDomainManager = pMyHostControl->GetDomainManagerForDefaultDomain();
+    BSTR name = SysAllocString(L"TestExe");
+    _bstr_t name_t;
+    name_t.Assign(name);
+
+    hr = pAppDomainManager->Run(name_t, binary, args);
+    CheckHr(hr);
+
+    hr = pRuntimeHost->Stop();
     CheckHr(hr);
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
-    Init();
-    TCHAR NPath[MAX_PATH];
-    GetCurrentDirectory(MAX_PATH, NPath);
-    wprintf(NPath);
+    int argc;
+    LPWSTR* args = CommandLineToArgvW(GetCommandLineW(), &argc);
+
     HANDLE fhandle = CreateFile(L"TestExe.exe", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (fhandle != INVALID_HANDLE_VALUE)
     {
-        DWORD fileSize_H{ 0 };
-        ULONG64 fileSize = GetFileSize(fhandle, &fileSize_H);
-        fileSize |= (DWORD64)fileSize_H << sizeof(DWORD);
-        BYTE* file_buff = new BYTE[fileSize];
-        if (fileSize > 0 && ReadFile(fhandle, file_buff, fileSize, &fileSize_H, NULL))
+        ULONG fileSize = GetFileSize(fhandle, nullptr);
+        if (fileSize)
         {
-            RunFromMemory(file_buff, fileSize);
+            DWORD byte_read;
+            BYTE* file_buff = new BYTE[fileSize];
+            if (fileSize > 0 && ReadFile(fhandle, file_buff, fileSize, &byte_read, NULL) && byte_read == fileSize)
+            {
+                SAFEARRAY* binary = GenBinary(file_buff, fileSize);
+                SAFEARRAY* args_sa = GenArg(args, argc);
+                RunFromMemory(binary, args_sa);
+            }
+            delete[] file_buff;
         }
+        CloseHandle(fhandle);
     }
     else
     {
         wprintf(L"Error");
     }
+    system("pause");
 }
