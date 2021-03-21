@@ -67,6 +67,6 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"$(FrameworkSdkDir)bin\NETFX $(TargetFrameworkVersion.Replace("v", "")) Tools\tlbexp.exe" "$(TargetDir)$(TargetFileName)" "$(TargetDir)$(TargetName).tlb"</PostBuildEvent>
+    <PostBuildEvent>"$(FrameworkSdkDir)bin\NETFX $(TargetFrameworkVersion.Replace("v", "")) Tools$(PlatformName.Replace("x86","").Replace("x64","\\x64"))\tlbexp.exe" "$(TargetDir)$(TargetFileName)" "$(TargetDir)$(TargetName).tlb"</PostBuildEvent>
   </PropertyGroup>
 </Project>

@@ -51,8 +51,7 @@ SAFEARRAY* GenArg(const LPWSTR* args, const int argc)
 }
 
 
-
-void RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
+void Init()
 {
     HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);//Install WPF Mode
     CheckHr(hr);
@@ -62,8 +61,7 @@ void RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
     CheckHr(hr);
     hr = pRuntimeInfo->GetInterface(CLSID_CLRRuntimeHost, IID_PPV_ARGS(&pRuntimeHost));
     CheckHr(hr);
-    
-    //Install AppDomain
+
     hr = pRuntimeHost->GetCLRControl(&pCLRControl);
     CheckHr(hr);
 
@@ -76,14 +74,18 @@ void RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
 
     hr = pRuntimeHost->Start();//Start CLR host
     CheckHr(hr);
+}
 
 
+
+void RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
+{
     ICustomAppDomainManager* pAppDomainManager = pMyHostControl->GetDomainManagerForDefaultDomain();
     BSTR name = SysAllocString(L"TestExe");
     _bstr_t name_t;
     name_t.Assign(name);
 
-    hr = pAppDomainManager->Run(name_t, binary, args);
+    HRESULT hr = pAppDomainManager->Run(name_t, binary, args);
     CheckHr(hr);
 
     hr = pRuntimeHost->Stop();
@@ -105,6 +107,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             BYTE* file_buff = new BYTE[fileSize];
             if (fileSize > 0 && ReadFile(fhandle, file_buff, fileSize, &byte_read, NULL) && byte_read == fileSize)
             {
+                Init();
                 SAFEARRAY* binary = GenBinary(file_buff, fileSize);
                 SAFEARRAY* args_sa = GenArg(args, argc);
                 RunFromMemory(binary, args_sa);
