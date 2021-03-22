@@ -17,10 +17,10 @@ MinimalHostControl* pMyHostControl = NULL;
 
 SAFEARRAY* GenBinary(const BYTE* pImage, ULONG assembyLength)
 {
-    SAFEARRAYBOUND rgsabound[1];
-    rgsabound[0].cElements = assembyLength;
-    rgsabound[0].lLbound = 0;
-    SAFEARRAY* pSafeArray = SafeArrayCreate(VT_UI1, 1, rgsabound);
+    SAFEARRAYBOUND rgsabound;
+    rgsabound.cElements = assembyLength;
+    rgsabound.lLbound = 0;
+    SAFEARRAY* pSafeArray = SafeArrayCreate(VT_UI1, 1, &rgsabound);
     if (pSafeArray == nullptr) return nullptr;
 
     void* pvData = NULL;
@@ -34,24 +34,29 @@ SAFEARRAY* GenBinary(const BYTE* pImage, ULONG assembyLength)
 
 SAFEARRAY* GenArg(const LPWSTR* args, const int argc)
 {
-    SAFEARRAYBOUND rgsabound[1];
-    rgsabound[0].cElements = argc;
-    rgsabound[0].lLbound = 0;
-    SAFEARRAY* pSafeArray = SafeArrayCreate(VT_BSTR, 1, rgsabound);
+    if (argc < 2) return nullptr;
+
+    HRESULT hr;
+    SAFEARRAYBOUND rgsabound;
+    rgsabound.cElements = argc - 1;
+    rgsabound.lLbound = 0;
+    SAFEARRAY* pSafeArray = SafeArrayCreate(VT_BSTR, 1, &rgsabound);
     if (pSafeArray == nullptr) return nullptr;
 
-    for (int i = 0; i < argc; i++)
+    for (int i = 1; i < argc; i++)
     {
         BSTR pData = SysAllocString(args[i]);
-        long rgIndicies[1];
-        rgIndicies[0] = rgsabound[0].lLbound + i;
-        HRESULT hr = SafeArrayPutElement(pSafeArray, rgIndicies, pData);
+        long rgIndicies;
+        rgIndicies = rgsabound.lLbound + i - 1;
+        hr = SafeArrayPutElement(pSafeArray, &rgIndicies, pData);
+        CheckHr(hr);
     }
+
     return pSafeArray;
 }
 
 
-void Init()
+void InitClrHost()
 {
     HRESULT hr = CoInitializeEx(NULL, COINIT_APARTMENTTHREADED);//Install WPF Mode
     CheckHr(hr);
@@ -76,20 +81,46 @@ void Init()
     CheckHr(hr);
 }
 
-
-
-void RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
+int RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
 {
     ICustomAppDomainManager* pAppDomainManager = pMyHostControl->GetDomainManagerForDefaultDomain();
-    BSTR name = SysAllocString(L"TestExe");
+
+    BSTR name = SysAllocString(L"TestfriendlyName");
     _bstr_t name_t;
     name_t.Assign(name);
 
-    HRESULT hr = pAppDomainManager->Run(name_t, binary, args);
+    TCHAR path[2001] = L"";
+    DWORD len = GetCurrentDirectory(2000, path);
+
+    _bstr_t work_dir;
+    work_dir.Assign(SysAllocString(path));
+
+    HRESULT hr = pAppDomainManager->Run(name_t, work_dir, binary, args);
     CheckHr(hr);
 
-    hr = pRuntimeHost->Stop();
-    CheckHr(hr);
+    HRESULT hr_ = pRuntimeHost->Stop();
+    CheckHr(hr_);
+
+    return hr;
+}
+
+BYTE* ReadFile(LPCWSTR fileName, ULONG* fileSize)
+{
+    HANDLE fhandle = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (fhandle == INVALID_HANDLE_VALUE) exit(GetLastError());
+
+    *fileSize = GetFileSize(fhandle, nullptr);
+    if (!fileSize) exit(ERROR_FILE_NOT_SUPPORTED);
+
+    DWORD byte_read;
+    BYTE* file_buff = new BYTE[*fileSize];
+    if (!ReadFile(fhandle, file_buff, *fileSize, &byte_read, NULL)) exit(GetLastError());
+    if (byte_read != *fileSize) exit(-1);
+    CloseHandle(fhandle);
+
+    //decrypt here
+
+    return file_buff;
 }
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
@@ -97,28 +128,14 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     int argc;
     LPWSTR* args = CommandLineToArgvW(GetCommandLineW(), &argc);
 
-    HANDLE fhandle = CreateFile(L"TestExe.exe", GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (fhandle != INVALID_HANDLE_VALUE)
-    {
-        ULONG fileSize = GetFileSize(fhandle, nullptr);
-        if (fileSize)
-        {
-            DWORD byte_read;
-            BYTE* file_buff = new BYTE[fileSize];
-            if (fileSize > 0 && ReadFile(fhandle, file_buff, fileSize, &byte_read, NULL) && byte_read == fileSize)
-            {
-                Init();
-                SAFEARRAY* binary = GenBinary(file_buff, fileSize);
-                SAFEARRAY* args_sa = GenArg(args, argc);
-                RunFromMemory(binary, args_sa);
-            }
-            delete[] file_buff;
-        }
-        CloseHandle(fhandle);
-    }
-    else
-    {
-        wprintf(L"Error");
-    }
-    system("pause");
+    ULONG buffSize;
+    BYTE* file_buff = ReadFile(L"TestExe.exe", &buffSize);
+
+    SAFEARRAY* binary = GenBinary(file_buff, buffSize);
+    SAFEARRAY* args_sa = GenArg(args, argc);
+
+    delete[] file_buff;
+
+    InitClrHost();
+    return RunFromMemory(binary, args_sa);
 }

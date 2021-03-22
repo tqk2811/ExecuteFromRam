@@ -1,6 +1,8 @@
 ﻿using System;
+using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.Permissions;
 using System.Security.Policy;
 
 namespace MyAppDomainManager
@@ -10,34 +12,55 @@ namespace MyAppDomainManager
   {
     public CustomAppDomainManager()
     {
-      Console.WriteLine("*** Instantiated CustomAppDomainManager");
+      System.Diagnostics.Trace.WriteLine("*** Instantiated CustomAppDomainManager");
     }
 
     public override void InitializeNewDomain(AppDomainSetup appDomainInfo)
     {
-      Console.WriteLine("*** InitializeNewDomain");
+      System.Diagnostics.Trace.WriteLine("*** InitializeNewDomain");
       this.InitializationFlags = AppDomainManagerInitializationOptions.RegisterWithHost;
     }
 
     public override AppDomain CreateDomain(string friendlyName, Evidence securityInfo, AppDomainSetup appDomainInfo)
     {
       var appDomain = base.CreateDomain(friendlyName, securityInfo, appDomainInfo);
-      Console.WriteLine("*** Created AppDomain {0}", friendlyName);
+      System.Diagnostics.Trace.WriteLine("*** Created AppDomain {0}", friendlyName);
       return appDomain;
     }
 
-    public void Run(string friendlyName, byte[] asmRaw, string[] args)
+
+    public override Assembly EntryAssembly => assembly;//base.EntryAssembly;
+    private Assembly assembly;
+
+
+    public void Run(string friendlyName, string workingDir, byte[] asmRaw, string[] args)
     {
-      AppDomain ad = AppDomain.CreateDomain(friendlyName);
-      Assembly assembly = ad.Load(asmRaw);
-      if(args != null && args.Length > 0)
+      System.Diagnostics.Trace.WriteLine("Run");
+      if (string.IsNullOrEmpty(friendlyName) || string.IsNullOrEmpty(workingDir) || asmRaw == null || asmRaw.Length == 0) return;
+      if (!Directory.Exists(workingDir)) return;
+
+      AppDomain thisAD = AppDomain.CurrentDomain;
+
+      //AppDomainSetup appDomainSetup = new AppDomainSetup();
+      //appDomainSetup.ApplicationBase = workingDir;
+      //appDomainSetup.PrivateBinPath = thisAD.BaseDirectory;
+      AppDomain ad = thisAD;// AppDomain.CreateDomain(friendlyName,null, appDomainSetup);
+      assembly = ad.Load(asmRaw);
+
+
+      MethodInfo EntryPoint = assembly.EntryPoint;
+      if (EntryPoint != null)
       {
-        Console.WriteLine("C# Args: " + string.Join(" ", args));
+        System.Diagnostics.Trace.WriteLine("EntryPoint found");
+        //(new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess)).Assert();
+        EntryPoint.Invoke(null, null);
       }
-      object obj = assembly.EntryPoint.Invoke(null, args);
-      AppDomain.Unload(ad);
-      
-      //return (obj is int code) ? code : 0;
+      else
+      {
+        System.Diagnostics.Trace.WriteLine("EntryPoint not found");
+      }
+      //ad.
+      //AppDomain.Unload(ad);
     }
   }
 }
