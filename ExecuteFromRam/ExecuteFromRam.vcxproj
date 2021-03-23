@@ -157,9 +157,11 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="AES.cpp" />
     <ClCompile Include="ExecuteFromRam.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="AES.h" />
     <ClInclude Include="MinimalHostControl.h" />
     <ClInclude Include="pch.h" />
   </ItemGroup>

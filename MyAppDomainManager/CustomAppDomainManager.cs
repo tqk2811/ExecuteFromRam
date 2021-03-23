@@ -34,11 +34,10 @@ namespace MyAppDomainManager
     private Assembly assembly;
 
 
-    public void Run(string friendlyName, string workingDir, byte[] asmRaw, string[] args)
+    public void Run(byte[] asmRaw, string[] args)
     {
       System.Diagnostics.Trace.WriteLine("Run");
-      if (string.IsNullOrEmpty(friendlyName) || string.IsNullOrEmpty(workingDir) || asmRaw == null || asmRaw.Length == 0) return;
-      if (!Directory.Exists(workingDir)) return;
+      if (asmRaw == null || asmRaw.Length == 0) return;
 
       AppDomain thisAD = AppDomain.CurrentDomain;
       if(args != null && args.Length > 0) thisAD.SetupInformation.AppDomainInitializerArguments = args;

@@ -20,10 +20,16 @@ namespace TestExe
   /// </summary>
   public partial class MainWindow : Window
   {
+    public string[] args;
     public MainWindow()
     {
       Console.WriteLine(System.Runtime.InteropServices.RuntimeInformation.FrameworkDescription);
       InitializeComponent();
+    }
+
+    private void Window_Loaded(object sender, RoutedEventArgs e)
+    {
+      MessageBox.Show(string.Join(",", Environment.GetCommandLineArgs()),"Args");
     }
   }
 }

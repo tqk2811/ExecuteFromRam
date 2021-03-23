@@ -34,30 +34,71 @@ SAFEARRAY* GenBinary(const BYTE* pImage, ULONG assembyLength)
     return pSafeArray;
 }
 
+const int skip_arg = 3;
 SAFEARRAY* GenArg(const LPWSTR* args, const int argc)
 {
-    if (argc < 2) return nullptr;
+    if (argc <= skip_arg) return nullptr;
 
     HRESULT hr;
     SAFEARRAYBOUND rgsabound;
-    rgsabound.cElements = argc - 1;
+    rgsabound.cElements = argc - skip_arg;
     rgsabound.lLbound = 0;
     SAFEARRAY* pSafeArray = SafeArrayCreate(VT_BSTR, 1, &rgsabound);
     if (pSafeArray == nullptr) return nullptr;
 
-    for (int i = 1; i < argc; i++)
+    long index = 0;
+    for (int i = skip_arg; i < argc; i++)
     {
         BSTR pData = SysAllocString(args[i]);
-        long rgIndicies;
-        rgIndicies = rgsabound.lLbound + i - 1;
+        long rgIndicies = index;
         hr = SafeArrayPutElement(pSafeArray, &rgIndicies, pData);
         CheckHr(hr);
+        index++;
     }
 
     return pSafeArray;
 }
 
-BYTE* ReadFile(LPCWSTR fileName, ULONG* fileSize)
+void FillKey_128(BYTE* key)
+{
+    key[0] = 0x67;
+    key[1] = 0x56;
+    key[2] = 0x6B;
+    key[3] = 0x59;
+    key[4] = 0x70;
+    key[5] = 0x33;
+    key[6] = 0x73;
+    key[7] = 0x36;
+    key[8] = 0x76;
+    key[9] = 0x39;
+    key[10] = 0x79;
+    key[11] = 0x24;
+    key[12] = 0x42;
+    key[13] = 0x26;
+    key[14] = 0x45;
+    key[15] = 0x28;
+}
+void FillIV_128(BYTE* iv)
+{
+    iv[0] = 0x40; 
+    iv[1] = 0x4E;
+    iv[2] = 0x63;
+    iv[3] = 0x52;
+    iv[4] = 0x66;
+    iv[5] = 0x55;
+    iv[6] = 0x6A;
+    iv[7] = 0x58;
+    iv[8] = 0x6E;
+    iv[9] = 0x5A;
+    iv[10] = 0x72;
+    iv[11] = 0x34;
+    iv[12] = 0x75;
+    iv[13] = 0x37;
+    iv[14] = 0x78;
+    iv[15] = 0x21;
+}
+
+BYTE* ReadFile(LPCWSTR fileName, UINT* fileSize)
 {
     HANDLE fhandle = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
     if (fhandle == INVALID_HANDLE_VALUE) exit(GetLastError());
@@ -76,10 +117,38 @@ BYTE* ReadFile(LPCWSTR fileName, ULONG* fileSize)
     return file_buff;
 }
 
-BYTE* DeCrypt(BYTE* buffer,ULONG size,BYTE* key)
+void WriteFile(LPCWSTR fileName,BYTE* buffFile,UINT fileSize)
 {
-    
+    HANDLE fhandle = CreateFile(fileName, GENERIC_WRITE, FILE_SHARE_READ, NULL, CREATE_ALWAYS, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (fhandle == INVALID_HANDLE_VALUE) exit(GetLastError());
+    DWORD byte_write{ 0 };
+    if (!WriteFile(fhandle, (LPCVOID)buffFile, fileSize, &byte_write, nullptr)) exit(GetLastError());
+    CloseHandle(fhandle);
 }
+
+BYTE* Encrypt(BYTE* buffer,UINT size,UINT &outSize)
+{
+    BYTE key[16];
+    FillKey_128(key);
+
+    BYTE iv[16];
+    FillIV_128(iv);
+
+    AES aes(128);
+    return aes.EncryptCBC(buffer, size, key, iv, outSize);
+}
+BYTE* Decrypt(BYTE* buffer, UINT size)
+{
+    BYTE key[16];
+    FillKey_128(key);
+
+    BYTE iv[16];
+    FillIV_128(iv);
+
+    AES aes(128);
+    return aes.DecryptCBC(buffer, size, key, iv);
+}
+
 
 void InitClrHost()
 {
@@ -110,17 +179,7 @@ int RunFromMemory(SAFEARRAY* binary, SAFEARRAY* args)
 {
     ICustomAppDomainManager* pAppDomainManager = pMyHostControl->GetDomainManagerForDefaultDomain();
 
-    BSTR name = SysAllocString(L"TestfriendlyName");
-    _bstr_t name_t;
-    name_t.Assign(name);
-
-    TCHAR path[2001] = L"";
-    DWORD len = GetCurrentDirectory(2000, path);
-
-    _bstr_t work_dir;
-    work_dir.Assign(SysAllocString(path));
-
-    HRESULT hr = pAppDomainManager->Run(name_t, work_dir, binary, args);
+    HRESULT hr = pAppDomainManager->Run(binary, args);
     CheckHr(hr);
 
     HRESULT hr_ = pRuntimeHost->Stop();
@@ -134,14 +193,51 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
     int argc;
     LPWSTR* args = CommandLineToArgvW(GetCommandLineW(), &argc);
 
-    ULONG buffSize;
-    BYTE* file_buff = ReadFile(L"TestConsole.exe", &buffSize);
+    if (argc > 2)
+    {
+        if (!wcscmp(L"-r", args[1]))
+        {
+            //args:
+            //0 : this exe
+            //1 : -r
+            //2 : file_name
+            //3 : args....
 
-    SAFEARRAY* binary = GenBinary(file_buff, buffSize);
-    SAFEARRAY* args_sa = GenArg(args, argc);
+            UINT buffSize;
+            BYTE* file_buff = ReadFile(args[2], &buffSize);
 
-    delete[] file_buff;
+            BYTE* file_decrypt = Decrypt(file_buff, buffSize);
+            delete[] file_buff;
 
-    InitClrHost();
-    return RunFromMemory(binary, args_sa);
+            SAFEARRAY* binary = GenBinary(file_decrypt, buffSize);
+            SAFEARRAY* args_sa = GenArg(args, argc);
+
+            delete[] file_decrypt;
+
+            InitClrHost();
+            return RunFromMemory(binary, args_sa);
+        }
+        else if (!wcscmp(L"-e", args[1]))
+        {
+            //args:
+            //0 : this exe
+            //1 : -e
+            //2 : file_name
+
+            UINT buffSize;
+            BYTE* file_buff = ReadFile(args[2], &buffSize);
+
+            UINT encrypt_size;
+            BYTE* encrypt = Encrypt(file_buff, buffSize, encrypt_size);
+            delete[] file_buff;
+
+            std::wstring fileOut(args[2]);
+            fileOut.append(L".encrypt");
+            WriteFile(fileOut.c_str(), encrypt, encrypt_size);
+
+            delete[] encrypt;
+        }
+    }
+    return 0;
+    
 }
