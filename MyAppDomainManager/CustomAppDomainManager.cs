@@ -4,6 +4,7 @@ using System.Reflection;
 using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Security.Policy;
+using System.Linq;
 
 namespace MyAppDomainManager
 {
@@ -40,27 +41,22 @@ namespace MyAppDomainManager
       if (!Directory.Exists(workingDir)) return;
 
       AppDomain thisAD = AppDomain.CurrentDomain;
-
-      //AppDomainSetup appDomainSetup = new AppDomainSetup();
-      //appDomainSetup.ApplicationBase = workingDir;
-      //appDomainSetup.PrivateBinPath = thisAD.BaseDirectory;
-      AppDomain ad = thisAD;// AppDomain.CreateDomain(friendlyName,null, appDomainSetup);
-      assembly = ad.Load(asmRaw);
-
-
+      if(args != null && args.Length > 0) thisAD.SetupInformation.AppDomainInitializerArguments = args;
+      assembly = thisAD.Load(asmRaw);
       MethodInfo EntryPoint = assembly.EntryPoint;
       if (EntryPoint != null)
       {
-        System.Diagnostics.Trace.WriteLine("EntryPoint found");
-        //(new ReflectionPermission(ReflectionPermissionFlag.RestrictedMemberAccess)).Assert();
-        EntryPoint.Invoke(null, null);
+        var paras = EntryPoint.GetParameters();
+        if(paras.Length > 0 && paras.First().ParameterType == typeof(string[]))
+        {
+          EntryPoint.Invoke(null, new object[] { args });//Main(string[] args)
+        }
+        else EntryPoint.Invoke(null, null);
       }
       else
       {
         System.Diagnostics.Trace.WriteLine("EntryPoint not found");
       }
-      //ad.
-      //AppDomain.Unload(ad);
     }
   }
 }

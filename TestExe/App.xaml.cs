@@ -13,5 +13,12 @@ namespace TestExe
   /// </summary>
   public partial class App : Application
   {
+    private void Application_Startup(object sender, StartupEventArgs e)
+    {
+      var args = e.Args;
+      System.Diagnostics.Trace.WriteLine("Application_Startup Args.Count: " + args.Length);
+      MainWindow window = new MainWindow();
+      window.Show();
+    }
   }
 }

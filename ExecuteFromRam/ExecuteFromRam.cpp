@@ -3,11 +3,13 @@
 //C:\Windows\Microsoft.NET\Framework
 //C:\Windows\Microsoft.NET\Framework64
 const LPCWSTR RuntimeVersion = L"v4.0.30319";
-const LPCWSTR domainAssemblyName = L"MyAppDomainManager";
+//https://stackoverflow.com/a/24136074/5034139 public key token
+const LPCWSTR domainAssemblyName = L"MyAppDomainManager";//, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d3b6b01f2067f563";
 const LPCWSTR domainTypename = L"MyAppDomainManager.CustomAppDomainManager";
 
 //https://www.codeproject.com/Articles/1236146/Protecting-NET-plus-Application-By-Cplusplus-Unman
 //https://www.codeproject.com/Articles/416471/CLR-Hosting-Customizing-the-CLR
+//https://www.codeproject.com/Articles/418259/CLR-Hosting-Customizing-the-CLR-Part-2
 
 ICLRMetaHost* pMetaHost = NULL;
 ICLRRuntimeInfo* pRuntimeInfo = NULL;
@@ -55,6 +57,29 @@ SAFEARRAY* GenArg(const LPWSTR* args, const int argc)
     return pSafeArray;
 }
 
+BYTE* ReadFile(LPCWSTR fileName, ULONG* fileSize)
+{
+    HANDLE fhandle = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
+    if (fhandle == INVALID_HANDLE_VALUE) exit(GetLastError());
+
+    *fileSize = GetFileSize(fhandle, nullptr);
+    if (!fileSize) exit(ERROR_FILE_NOT_SUPPORTED);
+
+    DWORD byte_read;
+    BYTE* file_buff = new BYTE[*fileSize];
+    if (!ReadFile(fhandle, file_buff, *fileSize, &byte_read, NULL)) exit(GetLastError());
+    if (byte_read != *fileSize) exit(-1);
+    CloseHandle(fhandle);
+
+    //decrypt here
+
+    return file_buff;
+}
+
+BYTE* DeCrypt(BYTE* buffer,ULONG size,BYTE* key)
+{
+    
+}
 
 void InitClrHost()
 {
@@ -81,7 +106,7 @@ void InitClrHost()
     CheckHr(hr);
 }
 
-int RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
+int RunFromMemory(SAFEARRAY* binary, SAFEARRAY* args)
 {
     ICustomAppDomainManager* pAppDomainManager = pMyHostControl->GetDomainManagerForDefaultDomain();
 
@@ -104,32 +129,13 @@ int RunFromMemory(SAFEARRAY* binary,SAFEARRAY* args)
     return hr;
 }
 
-BYTE* ReadFile(LPCWSTR fileName, ULONG* fileSize)
-{
-    HANDLE fhandle = CreateFile(fileName, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, NULL);
-    if (fhandle == INVALID_HANDLE_VALUE) exit(GetLastError());
-
-    *fileSize = GetFileSize(fhandle, nullptr);
-    if (!fileSize) exit(ERROR_FILE_NOT_SUPPORTED);
-
-    DWORD byte_read;
-    BYTE* file_buff = new BYTE[*fileSize];
-    if (!ReadFile(fhandle, file_buff, *fileSize, &byte_read, NULL)) exit(GetLastError());
-    if (byte_read != *fileSize) exit(-1);
-    CloseHandle(fhandle);
-
-    //decrypt here
-
-    return file_buff;
-}
-
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     int argc;
     LPWSTR* args = CommandLineToArgvW(GetCommandLineW(), &argc);
 
     ULONG buffSize;
-    BYTE* file_buff = ReadFile(L"TestExe.exe", &buffSize);
+    BYTE* file_buff = ReadFile(L"TestConsole.exe", &buffSize);
 
     SAFEARRAY* binary = GenBinary(file_buff, buffSize);
     SAFEARRAY* args_sa = GenArg(args, argc);
