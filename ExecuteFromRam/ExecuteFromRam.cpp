@@ -192,6 +192,24 @@ int RunFromMemory(SAFEARRAY* binary, SAFEARRAY* args)
     return hr;
 }
 
+int RunFile(LPCWSTR filePath, LPWSTR* args, int argc)
+{
+    UINT buffSize;
+    BYTE* file_buff = ReadFile(filePath, &buffSize);
+
+    BYTE* file_decrypt = Decrypt(file_buff, buffSize);
+    delete[] file_buff;
+
+    SAFEARRAY* binary = GenBinary(file_decrypt, buffSize);
+    SAFEARRAY* args_sa = GenArg(args, argc);
+
+    delete[] file_decrypt;
+
+    InitClrHost();
+    return RunFromMemory(binary, args_sa);
+}
+
+
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {
     int argc;
@@ -207,19 +225,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             //2 : file_name
             //3 : args....
 
-            UINT buffSize;
-            BYTE* file_buff = ReadFile(args[2], &buffSize);
-
-            BYTE* file_decrypt = Decrypt(file_buff, buffSize);
-            delete[] file_buff;
-
-            SAFEARRAY* binary = GenBinary(file_decrypt, buffSize);
-            SAFEARRAY* args_sa = GenArg(args, argc);
-
-            delete[] file_decrypt;
-
-            InitClrHost();
-            return RunFromMemory(binary, args_sa);
+            return RunFile(args[2], args, argc);
         }
         else if (!wcscmp(L"-e", args[1]))
         {
@@ -242,6 +248,16 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             delete[] encrypt;
         }
     }
+    else if (argc == 1)
+    {
+        WIN32_FIND_DATA data;
+        HANDLE hFind = FindFirstFile(L"*.exe.encrypt", &data);
+        if (hFind == INVALID_HANDLE_VALUE) return ERROR_FILE_NOT_FOUND;
+        FindClose(hFind);
+
+        return RunFile(data.cFileName, args, argc);
+    }
+
     return 0;
     
 }
