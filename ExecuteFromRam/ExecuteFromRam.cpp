@@ -4,7 +4,7 @@
 //C:\Windows\Microsoft.NET\Framework64
 const LPCWSTR RuntimeVersion = L"v4.0.30319";
 //https://stackoverflow.com/a/24136074/5034139 public key token
-const LPCWSTR domainAssemblyName = L"MyAppDomainManager";//, Version=1.0.0.0, Culture=neutral, PublicKeyToken=d3b6b01f2067f563";
+const LPCWSTR domainAssemblyName = L"MyAppDomainManager, Culture=neutral, PublicKeyToken=";
 const LPCWSTR domainTypename = L"MyAppDomainManager.CustomAppDomainManager";
 
 //https://www.codeproject.com/Articles/1236146/Protecting-NET-plus-Application-By-Cplusplus-Unman
@@ -168,7 +168,11 @@ void InitClrHost()
     hr = pRuntimeHost->SetHostControl(pMyHostControl);
     CheckHr(hr);
 
-    hr = pCLRControl->SetAppDomainManagerType(domainAssemblyName, domainTypename);
+
+    std::wstring asmName(domainAssemblyName);
+    asmName.append(L"e7aba3ea");
+    asmName.append(L"9a932f01");
+    hr = pCLRControl->SetAppDomainManagerType(asmName.c_str(), domainTypename);
     CheckHr(hr);
 
     hr = pRuntimeHost->Start();//Start CLR host

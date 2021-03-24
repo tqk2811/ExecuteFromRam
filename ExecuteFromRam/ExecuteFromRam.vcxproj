@@ -74,25 +74,25 @@
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(NETFXKitsDir)Lib\um\$(PlatformTarget);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\$(PlatformTarget)\</OutDir>
-    <IncludePath>$(OutDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)MyAppDomainManager;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(NETFXKitsDir)Lib\um\$(PlatformTarget);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\$(PlatformTarget)\</OutDir>
-    <IncludePath>$(OutDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)MyAppDomainManager;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <LibraryPath>$(NETFXKitsDir)Lib\um\$(PlatformTarget);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\$(PlatformTarget)\</OutDir>
-    <IncludePath>$(OutDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)MyAppDomainManager;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <LibraryPath>$(NETFXKitsDir)Lib\um\$(PlatformTarget);$(LibraryPath)</LibraryPath>
     <OutDir>$(SolutionDir)$(Configuration)\$(PlatformTarget)\</OutDir>
-    <IncludePath>$(OutDir);$(IncludePath)</IncludePath>
+    <IncludePath>$(SolutionDir)MyAppDomainManager;$(IncludePath)</IncludePath>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
