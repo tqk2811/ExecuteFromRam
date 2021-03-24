@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -30,6 +31,11 @@ namespace TestExe
     private void Window_Loaded(object sender, RoutedEventArgs e)
     {
       MessageBox.Show(string.Join(",", Environment.GetCommandLineArgs()),"Args");
+      using(StreamWriter sw = new StreamWriter("test.txt"))
+      {
+        sw.WriteLine(Guid.NewGuid().ToString());
+      }
+      MessageBox.Show(File.ReadAllText("test.txt"), "text");
     }
   }
 }

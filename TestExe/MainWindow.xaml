@@ -4,10 +4,11 @@
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TestExe"
+        xmlns:WpfUiControl="clr-namespace:TqkLibrary.WpfUi.UserControls;assembly=TqkLibrary.WpfUi"
         Loaded="Window_Loaded"
         mc:Ignorable="d"
         Title="MainWindow" Height="450" Width="800">
     <Grid>
-        
+        <WpfUiControl:NumericUpDownText HorizontalAlignment="Right" Margin="0,10,335,0" Width="162" VerticalAlignment="Top"/>
     </Grid>
 </Window>

@@ -72,6 +72,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"$(TargetDir)ExecuteFromRam" -e "$(TargetDir)$(TargetFileName)"</PostBuildEvent>
+    <PostBuildEvent>"$(TargetDir)ExecuteFromRam" -e "$(TargetDir)$(TargetFileName)"
+del "$(TargetDir)$(TargetFileName)"</PostBuildEvent>
   </PropertyGroup>
 </Project>

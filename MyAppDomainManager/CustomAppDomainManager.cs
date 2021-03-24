@@ -5,6 +5,8 @@ using System.Runtime.InteropServices;
 using System.Security.Permissions;
 using System.Security.Policy;
 using System.Linq;
+using System.Security;
+using System.Security.AccessControl;
 
 namespace MyAppDomainManager
 {
@@ -39,14 +41,20 @@ namespace MyAppDomainManager
       System.Diagnostics.Trace.WriteLine("Run");
       if (asmRaw == null || asmRaw.Length == 0) return;
 
-      AppDomain thisAD = AppDomain.CurrentDomain;
-      if(args != null && args.Length > 0) thisAD.SetupInformation.AppDomainInitializerArguments = args;
-      assembly = thisAD.Load(asmRaw);
+      RunInCurrentDomain(asmRaw, args);
+      //RunInNewDomain(asmRaw, args);
+    }
+
+    void RunInCurrentDomain(byte[] asmRaw, string[] args)
+    {
+      AppDomain ad = AppDomain.CurrentDomain;
+      assembly = ad.Load(asmRaw);
+
       MethodInfo EntryPoint = assembly.EntryPoint;
       if (EntryPoint != null)
       {
         var paras = EntryPoint.GetParameters();
-        if(paras.Length > 0 && paras.First().ParameterType == typeof(string[]))
+        if (paras.Length > 0 && paras.First().ParameterType == typeof(string[]))
         {
           EntryPoint.Invoke(null, new object[] { args });//Main(string[] args)
         }
@@ -56,6 +64,40 @@ namespace MyAppDomainManager
       {
         System.Diagnostics.Trace.WriteLine("EntryPoint not found");
       }
+    }
+
+    void RunInNewDomain(byte[] asmRaw, string[] args)
+    {
+      AppDomain thisAD = AppDomain.CurrentDomain;
+      AppDomainSetup appDomainSetup = new AppDomainSetup();
+      //appDomainSetup.AppDomainInitializer = new AppDomainInitializer(ChildDomainInit);
+      appDomainSetup.AppDomainInitializerArguments = args;
+      appDomainSetup.ApplicationBase = thisAD.SetupInformation.ApplicationBase;
+
+      PermissionSet permSet = new PermissionSet(PermissionState.None);
+      permSet.AddPermission(new SecurityPermission(SecurityPermissionFlag.Execution));
+      permSet.AddPermission(new UIPermission(PermissionState.Unrestricted));
+      permSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.PathDiscovery, AccessControlActions.View, appDomainSetup.ApplicationBase));
+      permSet.AddPermission(new FileIOPermission(FileIOPermissionAccess.Read, AccessControlActions.View, appDomainSetup.ApplicationBase));
+
+      AppDomain ad = AppDomain.CreateDomain(Guid.NewGuid().ToString(), thisAD.Evidence, appDomainSetup, permSet);
+
+      assembly = ad.Load(asmRaw);
+      MethodInfo EntryPoint = assembly.EntryPoint;
+      if (EntryPoint != null)
+      {
+        var paras = EntryPoint.GetParameters();
+        if (paras.Length > 0 && paras.First().ParameterType == typeof(string[]))
+        {
+          EntryPoint.Invoke(null, new object[] { args });//Main(string[] args)
+        }
+        else EntryPoint.Invoke(null, null);
+      }
+      else
+      {
+        System.Diagnostics.Trace.WriteLine("EntryPoint not found");
+      }
+      AppDomain.Unload(ad);
     }
   }
 }

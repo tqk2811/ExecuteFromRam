@@ -60,6 +60,12 @@
     <StartupObject />
   </PropertyGroup>
   <ItemGroup>
+    <Reference Include="MaterialDesignColors">
+      <HintPath>..\..\..\CSharp\Library\TqkLibrary\bin\Release\net462\MaterialDesignColors.dll</HintPath>
+    </Reference>
+    <Reference Include="MaterialDesignThemes.Wpf">
+      <HintPath>..\..\..\CSharp\Library\TqkLibrary\bin\Release\net462\MaterialDesignThemes.Wpf.dll</HintPath>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
@@ -70,6 +76,9 @@
     <Reference Include="System.Net.Http" />
     <Reference Include="System.Xaml">
       <RequiredTargetFramework>4.0</RequiredTargetFramework>
+    </Reference>
+    <Reference Include="TqkLibrary.WpfUi">
+      <HintPath>..\..\..\CSharp\Library\TqkLibrary\bin\Release\net462\TqkLibrary.WpfUi.dll</HintPath>
     </Reference>
     <Reference Include="WindowsBase" />
     <Reference Include="PresentationCore" />
@@ -121,6 +130,7 @@
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <PropertyGroup>
-    <PostBuildEvent>"$(TargetDir)ExecuteFromRam" -e "$(TargetDir)$(TargetFileName)"</PostBuildEvent>
+    <PostBuildEvent>"$(TargetDir)ExecuteFromRam" -e "$(TargetDir)$(TargetFileName)"
+del "$(TargetDir)$(TargetFileName)"</PostBuildEvent>
   </PropertyGroup>
 </Project>
