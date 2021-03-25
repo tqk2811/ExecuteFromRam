@@ -34,20 +34,19 @@ SAFEARRAY* GenBinary(const BYTE* pImage, ULONG assembyLength)
     return pSafeArray;
 }
 
-const int skip_arg = 3;
-SAFEARRAY* GenArg(const LPWSTR* args, const int argc)
+SAFEARRAY* GenArg(const LPWSTR* args, const int argc, const int argsIgnoreCount)
 {
-    if (argc <= skip_arg) return nullptr;
+    if (argc <= argsIgnoreCount) return nullptr;
 
     HRESULT hr;
     SAFEARRAYBOUND rgsabound;
-    rgsabound.cElements = argc - skip_arg;
+    rgsabound.cElements = argc - argsIgnoreCount;
     rgsabound.lLbound = 0;
     SAFEARRAY* pSafeArray = SafeArrayCreate(VT_BSTR, 1, &rgsabound);
     if (pSafeArray == nullptr) return nullptr;
 
     long index = 0;
-    for (int i = skip_arg; i < argc; i++)
+    for (int i = argsIgnoreCount; i < argc; i++)
     {
         BSTR pData = SysAllocString(args[i]);
         long rgIndicies = index;
@@ -192,7 +191,7 @@ int RunFromMemory(SAFEARRAY* binary, SAFEARRAY* args)
     return hr;
 }
 
-int RunFile(LPCWSTR filePath, LPWSTR* args, int argc)
+int RunFile(const LPCWSTR filePath, const LPWSTR* args, const int argc, const int argsIgnoreCount)
 {
     UINT buffSize;
     BYTE* file_buff = ReadFile(filePath, &buffSize);
@@ -201,7 +200,7 @@ int RunFile(LPCWSTR filePath, LPWSTR* args, int argc)
     delete[] file_buff;
 
     SAFEARRAY* binary = GenBinary(file_decrypt, buffSize);
-    SAFEARRAY* args_sa = GenArg(args, argc);
+    SAFEARRAY* args_sa = GenArg(args, argc, argsIgnoreCount);
 
     delete[] file_decrypt;
 
@@ -217,7 +216,7 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
 
     if (argc > 2)
     {
-        if (!wcscmp(L"-r", args[1]))
+        if (!wcscmp(L"-r", args[1]))//run
         {
             //args:
             //0 : this exe
@@ -225,9 +224,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             //2 : file_name
             //3 : args....
 
-            return RunFile(args[2], args, argc);
+            return RunFile(args[2], args, argc, 3);
         }
-        else if (!wcscmp(L"-e", args[1]))
+        else if (!wcscmp(L"-e", args[1]))//encrypt
         {
             //args:
             //0 : this exe
@@ -248,16 +247,15 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
             delete[] encrypt;
         }
     }
-    else if (argc == 1)
+    else//auto search
     {
         WIN32_FIND_DATA data;
         HANDLE hFind = FindFirstFile(L"*.exe.encrypt", &data);
         if (hFind == INVALID_HANDLE_VALUE) return ERROR_FILE_NOT_FOUND;
         FindClose(hFind);
 
-        return RunFile(data.cFileName, args, argc);
+        return RunFile(data.cFileName, args, argc, 1);
     }
-
     return 0;
     
 }

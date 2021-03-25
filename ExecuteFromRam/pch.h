@@ -1,11 +1,6 @@
 #pragma once
-#include <cstdlib>
-#include <iostream>
-#include <sstream>
-#include <cassert>
-#include <fstream>
 #include <Windows.h>
-#include <vector>
+#include <string>
 #include <assert.h>
 
 #include <metahost.h>
