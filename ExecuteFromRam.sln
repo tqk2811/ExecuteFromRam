@@ -5,7 +5,9 @@ VisualStudioVersion = 16.0.31105.61
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "ExecuteFromRam", "ExecuteFromRam\ExecuteFromRam.vcxproj", "{720894A6-6E2D-4157-9079-2BC17493F73E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MyAppDomainManager", "MyAppDomainManager\MyAppDomainManager.csproj", "{C76B51E6-F394-448B-A168-5C6F072A03FF}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "MyAppDomainManager", "MyAppDomainManager\MyAppDomainManager.csproj", "{C76B51E6-F394-448B-A168-5C6F072A03FF}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestExe", "TestExe\TestExe.csproj", "{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -31,6 +33,14 @@ Global
 		{C76B51E6-F394-448B-A168-5C6F072A03FF}.Release|x64.Build.0 = Release|Any CPU
 		{C76B51E6-F394-448B-A168-5C6F072A03FF}.Release|x86.ActiveCfg = Release|Any CPU
 		{C76B51E6-F394-448B-A168-5C6F072A03FF}.Release|x86.Build.0 = Release|Any CPU
+		{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}.Debug|x64.ActiveCfg = Debug|x64
+		{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}.Debug|x64.Build.0 = Debug|x64
+		{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}.Debug|x86.ActiveCfg = Debug|x86
+		{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}.Debug|x86.Build.0 = Debug|x86
+		{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}.Release|x64.ActiveCfg = Release|x64
+		{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}.Release|x64.Build.0 = Release|x64
+		{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}.Release|x86.ActiveCfg = Release|x86
+		{E5E24C7C-04FB-4C34-B0C8-39E3C35353FD}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

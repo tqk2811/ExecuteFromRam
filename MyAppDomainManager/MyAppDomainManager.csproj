@@ -7,6 +7,10 @@
     <DelaySign>false</DelaySign>
   </PropertyGroup>
 
+  <PropertyGroup Condition="'$(Configuration)|$(TargetFramework)|$(Platform)'=='Debug|net462|AnyCPU'">
+    <OutputPath></OutputPath>
+  </PropertyGroup>
+
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Exec Command="&quot;$(FrameworkSdkDir)bin\NETFX 4.8 Tools\TlbExp.exe&quot; &quot;$(TargetDir)$(TargetFileName)&quot; &quot;$(SolutionDir)$(ConfigurationName)\$(TargetName).tlb&quot;" />
   </Target>

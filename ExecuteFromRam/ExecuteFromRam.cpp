@@ -169,8 +169,10 @@ void InitClrHost()
 
 
     std::wstring asmName(domainAssemblyName);
-    asmName.append(L"e7aba3ea");
-    asmName.append(L"9a932f01");
+    asmName.append(L"e7ab");
+    asmName.append(L"a3ea");
+    asmName.append(L"9a93");
+    asmName.append(L"2f01");
     hr = pCLRControl->SetAppDomainManagerType(asmName.c_str(), domainTypename);
     CheckHr(hr);
 
@@ -207,7 +209,6 @@ int RunFile(const LPCWSTR filePath, const LPWSTR* args, const int argc, const in
     InitClrHost();
     return RunFromMemory(binary, args_sa);
 }
-
 
 int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine, int nCmdShow)
 {

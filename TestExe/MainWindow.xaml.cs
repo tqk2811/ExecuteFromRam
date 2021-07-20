@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -28,14 +29,16 @@ namespace TestExe
       InitializeComponent();
     }
 
-    private void Window_Loaded(object sender, RoutedEventArgs e)
+    HttpClient httpClient = new HttpClient();
+    private async void Window_Loaded(object sender, RoutedEventArgs e)
     {
-      MessageBox.Show(string.Join(",", Environment.GetCommandLineArgs()),"Args");
-      using(StreamWriter sw = new StreamWriter("test.txt"))
+      using (HttpRequestMessage httpRequestMessage = new HttpRequestMessage(HttpMethod.Get, "https://api.myip.com"))
       {
-        sw.WriteLine(Guid.NewGuid().ToString());
+        using (HttpResponseMessage httpResponseMessage = await httpClient.SendAsync(httpRequestMessage,HttpCompletionOption.ResponseContentRead))
+        {
+          MessageBox.Show(await httpResponseMessage.Content.ReadAsStringAsync());
+        }
       }
-      MessageBox.Show(File.ReadAllText("test.txt"), "text");
     }
   }
 }

@@ -1,5 +1,12 @@
 #pragma once
 //https://github.com/SergeyBel/AES
+#ifndef BYTE
+typedef unsigned char BYTE;
+#endif
+#ifndef UINT
+typedef unsigned int UINT;
+#endif
+
 class AES
 {
 private:

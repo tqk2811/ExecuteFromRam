@@ -31,10 +31,8 @@ namespace MyAppDomainManager
       return appDomain;
     }
 
-
     public override Assembly EntryAssembly => assembly;//base.EntryAssembly;
     private Assembly assembly;
-
 
     public void Run(byte[] asmRaw, string[] args)
     {
