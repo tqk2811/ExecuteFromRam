@@ -258,5 +258,4 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PWSTR pCmdLine
         return RunFile(data.cFileName, args, argc, 1);
     }
     return 0;
-    
 }
