@@ -1,16 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿// See https://aka.ms/new-console-template for more information
+using System;
 
-namespace TestConsole
-{
-  class Program
-  {
-    static void Main(string[] args)
-    {
-      System.Diagnostics.Trace.WriteLine("Main Args.Count: " + args.Length);
-    }
-  }
-}
+Console.WriteLine("Hello, World!");
+Console.ReadLine();

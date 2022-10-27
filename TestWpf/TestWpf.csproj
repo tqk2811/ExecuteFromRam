@@ -1,0 +1,27 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<OutputType>WinExe</OutputType>
+		<TargetFrameworks>net462</TargetFrameworks>
+		<LangVersion>10.0</LangVersion>
+		<UseWPF>true</UseWPF>
+		<BaseOutputPath>$(SolutionDir)Debug\x86</BaseOutputPath>
+	</PropertyGroup>
+
+	<ItemGroup>
+	  <Compile Remove="bin\**" />
+	  <EmbeddedResource Remove="bin\**" />
+	  <None Remove="bin\**" />
+	  <Page Remove="bin\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+	  <PackageReference Include="System.Net.Http" Version="4.3.4" />
+	</ItemGroup>
+
+	
+	<Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	  <Exec Command="&quot;$(TargetDir)ExecuteFromRam&quot; -e &quot;$(TargetDir)$(TargetFileName)&quot;&#xD;&#xA;del &quot;$(TargetDir)$(TargetFileName)&quot;" />
+	</Target>
+
+</Project>
