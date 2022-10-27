@@ -26,6 +26,7 @@ const LPCWSTR domainTypename = L"MyAppDomainManager.CustomAppDomainManager";
 //https://www.codeproject.com/Articles/1236146/Protecting-NET-plus-Application-By-Cplusplus-Unman
 //https://www.codeproject.com/Articles/416471/CLR-Hosting-Customizing-the-CLR
 //https://www.codeproject.com/Articles/418259/CLR-Hosting-Customizing-the-CLR-Part-2
+//https://stackoverflow.com/q/13632187/5034139
 
 ICLRMetaHost* pMetaHost = NULL;
 ICLRRuntimeInfo* pRuntimeInfo = NULL;
@@ -81,6 +82,7 @@ void InitClrHost()
     CheckHr(hr);
     hr = CLRCreateInstance(CLSID_CLRMetaHost, IID_ICLRMetaHost, (LPVOID*)&pMetaHost);//Install MetaHost
     CheckHr(hr);
+    //pMetaHost->GetVersionFromFile
     hr = pMetaHost->GetRuntime(RuntimeVersion, IID_PPV_ARGS(&pRuntimeInfo));//Install .NET Runtime
     CheckHr(hr);
     hr = pRuntimeInfo->GetInterface(CLSID_CLRRuntimeHost, IID_PPV_ARGS(&pRuntimeHost));
