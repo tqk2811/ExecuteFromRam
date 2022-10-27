@@ -1,4 +1,4 @@
-#include "pch.h"
+#include <cstring>
 #include "AES.h"
 
 const BYTE sbox[16][16] = {
@@ -584,12 +584,5 @@ void AES::XorBlocks(BYTE* a, BYTE* b, BYTE* c, UINT len)
     for (UINT i = 0; i < len; i++)
     {
         c[i] = a[i] ^ b[i];
-    }
-}
-
-void AES::printHexArray(BYTE* a, UINT n)
-{
-    for (UINT i = 0; i < n; i++) {
-        printf("%02x ", a[i]);
     }
 }

@@ -1,4 +1,6 @@
-#pragma once
+#ifndef AES_H
+#define AES_H
+
 //https://github.com/SergeyBel/AES
 #ifndef BYTE
 typedef unsigned char BYTE;
@@ -74,6 +76,6 @@ public:
     BYTE* EncryptCFB(BYTE* in, UINT inLen, BYTE* key, BYTE* iv, UINT& outLen);
 
     BYTE* DecryptCFB(BYTE* in, UINT inLen, BYTE* key, BYTE* iv);
-
-    void printHexArray(BYTE* a, UINT n);
 };
+
+#endif // !AES_H
